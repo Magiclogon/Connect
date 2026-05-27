@@ -53,7 +53,7 @@ services:
     container_name: social-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3007:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
