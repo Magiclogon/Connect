@@ -1,0 +1,36 @@
+<div class="auth-page">
+  <div class="auth-bg"></div>
+  <div class="auth-card card">
+    <div class="auth-header">
+      <span class="logo-icon">C</span>
+      <h1>Connect</h1>
+      <p>{{ isLogin() ? 'Connectez-vous à votre compte' : 'Créez votre compte' }}</p>
+    </div>
+
+    @if (error()) {
+      <div class="error-msg">{{ error() }}</div>
+    }
+
+    <form (ngSubmit)="submit()" class="auth-form">
+      @if (!isLogin()) {
+        <input class="input" type="text" placeholder="Nom d'affichage" [(ngModel)]="displayName" name="displayName" required />
+      }
+      <input class="input" type="email" placeholder="Email" [(ngModel)]="email" name="email" required />
+      <input class="input" type="password" placeholder="Mot de passe" [(ngModel)]="password" name="password" required minlength="6" />
+      <button class="btn btn-primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Chargement...' : (isLogin() ? 'Se connecter' : "S'inscrire") }}
+      </button>
+    </form>
+
+    <p class="auth-switch">
+      {{ isLogin() ? "Pas encore de compte ?" : 'Déjà un compte ?' }}
+      <a href="#" (click)="$event.preventDefault(); toggleMode()">
+        {{ isLogin() ? "S'inscrire" : 'Se connecter' }}
+      </a>
+    </p>
+
+    <div class="demo-hint">
+      <p>Projet NoSQL — MongoDB · Neo4j · Redis</p>
+    </div>
+  </div>
+</div>

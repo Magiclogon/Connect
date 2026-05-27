@@ -1,0 +1,93 @@
+@if (profile(); as p) {
+  <div class="profile-page">
+    <div class="profile-cover" [style.backgroundImage]="p.coverUrl ? 'url(' + api.mediaUrl(p.coverUrl) + ')' : ''">
+      @if (isOwnProfile()) {
+        <label class="avatar-upload btn btn-secondary btn-sm cover-upload">
+          Changer la bannière
+          <input type="file" accept="image/*" hidden (change)="uploadCover($event)" />
+        </label>
+      }
+    </div>
+    <div class="profile-card card">
+      <div class="profile-avatar-wrap">
+        <app-avatar [name]="p.displayName" [url]="p.avatarUrl" size="lg" />
+        @if (isOwnProfile()) {
+          <label class="avatar-upload btn btn-secondary btn-sm">
+            Changer la photo
+            <input type="file" accept="image/*" hidden (change)="uploadAvatar($event)" />
+          </label>
+        }
+      </div>
+      <h1>{{ p.displayName }}</h1>
+      <p class="email">{{ p.email }}</p>
+      <p class="email">{{ friendCount() }} ami(s)</p>
+
+      @if (isOwnProfile()) {
+        <form class="profile-form" (ngSubmit)="save()">
+          <label>
+            <span>Nom d'affichage</span>
+            <input class="input" [(ngModel)]="displayName" name="displayName" />
+          </label>
+          <label>
+            <span>Bio</span>
+            <textarea class="input" [(ngModel)]="bio" name="bio" rows="3"></textarea>
+          </label>
+          <label>
+            <span>Adresse</span>
+            <input class="input" [(ngModel)]="address" name="address" />
+          </label>
+          <label>
+            <span>Ville</span>
+            <input class="input" [(ngModel)]="city" name="city" />
+          </label>
+          <label>
+            <span>Lieu de travail</span>
+            <input class="input" [(ngModel)]="workplace" name="workplace" />
+          </label>
+          <label>
+            <span>Site web</span>
+            <input class="input" [(ngModel)]="website" name="website" />
+          </label>
+          <button class="btn btn-primary" type="submit">
+            {{ saved() ? 'Enregistré' : 'Enregistrer' }}
+          </button>
+        </form>
+      } @else {
+        <div class="profile-info card">
+          <p><strong>Bio:</strong> {{ p.bio || '—' }}</p>
+          <p><strong>Adresse:</strong> {{ p.address || '—' }}</p>
+          <p><strong>Ville:</strong> {{ p.city || '—' }}</p>
+          <p><strong>Travail:</strong> {{ p.workplace || '—' }}</p>
+          <p><strong>Site web:</strong> {{ p.website || '—' }}</p>
+        </div>
+      }
+
+      <div class="db-info card">
+        <h3>Amis</h3>
+        <div class="friends-list">
+          @for (f of friends(); track f.id) {
+            <a class="friend-link" [routerLink]="['/profile', f.id]">{{ f.displayName }}</a>
+          } @empty {
+            <p>Aucun ami visible.</p>
+          }
+        </div>
+      </div>
+
+      <div class="db-info card">
+        <h3>Publications</h3>
+        @for (post of posts(); track post.id) {
+          <div class="profile-post">
+            <p>{{ post.content }}</p>
+            @for (m of post.media; track $index) {
+              @if (m.url) {
+                <img [src]="api.mediaUrl(m.url)" class="post-media" alt="" />
+              }
+            }
+          </div>
+        } @empty {
+          <p>Aucune publication.</p>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,117 @@
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.tabs button {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.tabs button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.user-card {
+  text-align: center;
+}
+
+.user-card h3 {
+  margin: 12px 0 4px;
+}
+
+.user-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.request-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.request-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.request-info span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.search-bar .input {
+  flex: 1;
+}
+
+.error-msg {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--danger);
+  color: #fca5a5;
+  padding: 12px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.suggestions-intro {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+}
+
+.suggestions-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.suggestions-desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.suggestion-profile-link {
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.suggestion-profile-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.suggestion-reason {
+  font-size: 13px;
+  color: var(--text-muted);
+}

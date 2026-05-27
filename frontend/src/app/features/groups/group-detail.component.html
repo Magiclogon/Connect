@@ -1,0 +1,50 @@
+@if (group(); as g) {
+  <div class="group-detail">
+    <header class="group-header card">
+      <div class="group-icon-lg">G</div>
+      <div>
+        <h1>{{ g.name }}</h1>
+        <p>{{ g.description }}</p>
+        <span class="member-count">{{ g.memberCount }} membres</span>
+      </div>
+    </header>
+
+    <div class="group-layout">
+      <aside class="members-panel card">
+        <h3>Membres</h3>
+        @for (m of members(); track m.id) {
+          <div class="member-row">
+            <app-avatar [name]="m.displayName" [url]="m.avatarUrl || ''" />
+            <a [routerLink]="['/profile', m.id]">{{ m.displayName }}</a>
+            @if (m.role === 'admin') { <span class="badge">Admin</span> }
+          </div>
+        }
+      </aside>
+
+      <section class="group-feed">
+        <div class="card create-post">
+          <textarea class="input" placeholder="Publier dans le groupe..." [(ngModel)]="newPost"></textarea>
+          <button class="btn btn-primary" (click)="createPost()">Publier</button>
+        </div>
+        @for (post of posts(); track post.id) {
+          <article class="card post-item">
+            <div class="post-header">
+              <app-avatar [name]="post.author.displayName" [url]="post.author.avatarUrl || ''" />
+              <a [routerLink]="['/profile', post.author.id]"><strong>{{ post.author.displayName }}</strong></a>
+            </div>
+            <p>{{ post.content }}</p>
+            @for (m of post.media; track $index) {
+              @if (m.url) {
+                <img [src]="api.mediaUrl(m.url)" class="post-img" alt="" />
+              }
+            }
+          </article>
+        } @empty {
+          <div class="empty-state card"><p>Aucune publication dans ce groupe.</p></div>
+        }
+      </section>
+    </div>
+  </div>
+} @else {
+  <div class="empty-state">Chargement...</div>
+}

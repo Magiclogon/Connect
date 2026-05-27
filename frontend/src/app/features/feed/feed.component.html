@@ -1,0 +1,205 @@
+<div class="feed-page">
+  <h1 class="page-title">Fil d'actualité</h1>
+
+  <!-- Stories -->
+  <section class="stories-bar card">
+    <div class="story-item create" (click)="openStoryCreator()">
+      <div class="story-ring create-ring">+</div>
+      <span>Votre story</span>
+    </div>
+    @for (group of stories(); track group.author.id) {
+      <div class="story-item" (click)="viewStories(group)">
+        <div class="story-ring">
+          <app-avatar [name]="group.author.displayName" [url]="group.author.avatarUrl || ''" />
+        </div>
+        <span>{{ group.author.displayName }}</span>
+      </div>
+    }
+  </section>
+
+  <!-- Create post -->
+  <section class="create-post card">
+    <textarea class="input" placeholder="Quoi de neuf ?" [(ngModel)]="newPost"></textarea>
+    @if (postError()) {
+      <p class="form-error">{{ postError() }}</p>
+    }
+    <div class="create-actions">
+      <label class="file-label">
+        Ajouter photo/vidéo
+        <input type="file" accept="image/*,video/*" hidden (change)="onFileSelect($event)" />
+      </label>
+      @if (selectedFile) {
+        <span class="file-name">{{ selectedFile.name }}</span>
+      }
+      <button class="btn btn-primary" (click)="createPost()">Publier</button>
+    </div>
+  </section>
+
+  <!-- Posts -->
+  @if (loading()) {
+    <div class="empty-state">Chargement...</div>
+  } @else if (posts().length === 0) {
+    <div class="empty-state card">
+      <h3>Aucune publication</h3>
+      <p>Ajoutez des amis pour voir leur contenu dans votre fil.</p>
+    </div>
+  } @else {
+    @for (post of posts(); track post.id) {
+      <article class="post-card card">
+        <header class="post-header">
+          <app-avatar [name]="post.author.displayName" [url]="post.author.avatarUrl || ''" />
+          <div>
+            <a class="name-link" [routerLink]="['/profile', post.author.id]"><strong>{{ post.author.displayName }}</strong></a>
+            <time>{{ post.createdAt | date:'short' }}</time>
+          </div>
+        </header>
+        @if (post.content) {
+          <p class="post-content">{{ post.content }}</p>
+        }
+        @for (m of post.media; track $index) {
+          @if (m.type === 'image' && m.url) {
+            <img class="post-media" [src]="api.mediaUrl(m.url)" alt="" />
+          }
+          @if (m.type === 'video' && m.url) {
+            <video class="post-media" [src]="api.mediaUrl(m.url)" controls></video>
+          }
+        }
+        <div class="reactions-bar">
+          @for (type of reactionTypes; track type) {
+            <button
+              class="reaction-btn"
+              [class.active]="getMyReaction(post) === type"
+              (click)="react(post.id, type)"
+            >{{ reactionLabels[type] }}</button>
+          }
+          <button class="reaction-count" (click)="openReactions(post.id)">
+            {{ post.reactions.length }} réaction{{ post.reactions.length > 1 ? 's' : '' }}
+          </button>
+        </div>
+        <div class="comments-section">
+          @for (c of post.comments; track c.id) {
+            <div class="comment">
+              <app-avatar [name]="c.author.displayName" [url]="c.author.avatarUrl || ''" />
+              <div class="comment-body">
+                <a class="name-link" [routerLink]="['/profile', c.author.id]"><strong>{{ c.author.displayName }}</strong></a>
+                <p>{{ c.content }}</p>
+                <div class="comment-actions">
+                  @for (type of reactionTypes; track type) {
+                    <button class="reaction-btn small" (click)="reactComment(post.id, c.id, type)">
+                      {{ reactionLabels[type] }}
+                    </button>
+                  }
+                  <button class="btn btn-ghost btn-sm" (click)="toggleReply(c.id)">Répondre</button>
+                </div>
+
+                @if (c.replies.length > 0) {
+                  <div class="replies">
+                    @for (r of c.replies; track r.id) {
+                      <div class="reply-item">
+                        <app-avatar [name]="r.author.displayName" [url]="r.author.avatarUrl || ''" />
+                        <div class="reply-body">
+                          <a class="name-link" [routerLink]="['/profile', r.author.id]"><strong>{{ r.author.displayName }}</strong></a>
+                          <p>{{ r.content }}</p>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (showReplyFor[c.id]) {
+                  <div class="comment-form">
+                    <input
+                      class="input"
+                      placeholder="Répondre..."
+                      [(ngModel)]="replyTexts[c.id]"
+                      (keyup.enter)="reply(post.id, c.id)"
+                    />
+                    <button class="btn btn-secondary btn-sm" (click)="reply(post.id, c.id)">Envoyer</button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          <div class="comment-form">
+            <input
+              class="input"
+              placeholder="Écrire un commentaire..."
+              [(ngModel)]="commentTexts[post.id]"
+              (keyup.enter)="comment(post.id)"
+            />
+            <button class="btn btn-secondary btn-sm" (click)="comment(post.id)">Envoyer</button>
+          </div>
+        </div>
+      </article>
+    }
+  }
+</div>
+
+@if (showReactionsModal()) {
+  <div class="modal-overlay" (click)="showReactionsModal.set(false)">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <h2>Détails des réactions</h2>
+      @for (item of reactionsDetail(); track item.user.id) {
+        <div class="reaction-row">
+          <app-avatar [name]="item.user.displayName" [url]="item.user.avatarUrl || ''" />
+          <div class="reaction-info">
+            <div class="name">{{ item.user.displayName }}</div>
+            <div class="type">{{ reactionLabels[item.type] }}</div>
+          </div>
+        </div>
+      } @empty {
+        <p>Aucune réaction.</p>
+      }
+    </div>
+  </div>
+}
+
+<!-- Story creator modal -->
+@if (showStoryModal()) {
+  <div class="modal-overlay" (click)="showStoryModal.set(false)">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <h2>Créer une story</h2>
+      <div class="story-type-tabs">
+        <button [class.active]="storyType() === 'text'" (click)="storyType.set('text')">Texte</button>
+        <button [class.active]="storyType() === 'image'" (click)="storyType.set('image')">Image</button>
+        <button [class.active]="storyType() === 'video'" (click)="storyType.set('video')">Vidéo</button>
+      </div>
+      @if (storyType() === 'text') {
+        <textarea class="input" placeholder="Votre message..." [(ngModel)]="storyText"></textarea>
+      } @else {
+        <input type="file" [accept]="storyType() === 'image' ? 'image/*' : 'video/*'" (change)="onStoryFile($event)" />
+        <input class="input" placeholder="Légende (optionnel)" [(ngModel)]="storyText" />
+      }
+      <button class="btn btn-primary" (click)="publishStory()">Publier (24h)</button>
+    </div>
+  </div>
+}
+
+<!-- Story viewer -->
+@if (viewingStory) {
+  <div class="story-viewer" (click)="nextStory()">
+    <div class="story-progress">
+      @for (s of viewingStory.stories; track s.id; let i = $index) {
+        <div class="progress-seg" [class.active]="i <= storyIndex"></div>
+      }
+    </div>
+    <button class="story-close" (click)="closeStoryViewer(); $event.stopPropagation()">Fermer</button>
+    <div class="story-content" (click)="$event.stopPropagation()">
+      @if (viewingStory.stories[storyIndex]; as story) {
+        @if (story.type === 'text') {
+          <div class="story-text" [style.background]="story.backgroundColor || '#6366f1'">
+            <p>{{ story.text }}</p>
+          </div>
+        }
+        @if (story.type === 'image' && story.mediaUrl) {
+          <img [src]="api.mediaUrl(story.mediaUrl)" alt="" />
+        }
+        @if (story.type === 'video' && story.mediaUrl) {
+          <video [src]="api.mediaUrl(story.mediaUrl)" autoplay controls></video>
+        }
+        <p class="story-author">{{ viewingStory.author.displayName }}</p>
+      }
+    </div>
+    <button class="btn btn-primary story-next" (click)="nextStory(); $event.stopPropagation()">Suivant</button>
+  </div>
+}

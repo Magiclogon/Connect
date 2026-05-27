@@ -1,0 +1,74 @@
+<div class="messages-page">
+  <h1 class="page-title">Messages</h1>
+  <div class="messages-layout">
+    <aside class="conv-list card">
+      @for (conv of conversations(); track conv.id) {
+        <div
+          class="conv-item"
+          [class.active]="activeConv()?.id === conv.id"
+          (click)="selectConv(conv)"
+        >
+          <app-avatar
+            [name]="conv.otherParticipant?.displayName || '?'"
+            [url]="conv.otherParticipant?.avatarUrl || ''"
+          />
+          <div class="conv-preview">
+            <a class="name-link" [routerLink]="['/profile', conv.otherParticipant?.id]">
+              <strong>{{ conv.otherParticipant?.displayName }}</strong>
+            </a>
+            <span>
+              {{ conv.messages.length ? conv.messages[conv.messages.length - 1].content : 'Aucun message' }}
+            </span>
+          </div>
+          @if (conv.unreadCount > 0) {
+            <span class="badge">{{ conv.unreadCount }}</span>
+          }
+        </div>
+      } @empty {
+        <p class="empty-hint">Aucune conversation. Démarrez-en une depuis la page Amis.</p>
+      }
+    </aside>
+
+    <section class="chat-panel card">
+      @if (activeConv(); as conv) {
+        <header class="chat-header">
+          <app-avatar
+            [name]="conv.otherParticipant?.displayName || '?'"
+            [url]="conv.otherParticipant?.avatarUrl || ''"
+          />
+          <a class="name-link" [routerLink]="['/profile', conv.otherParticipant?.id]">
+            <strong>{{ conv.otherParticipant?.displayName }}</strong>
+          </a>
+        </header>
+        <div class="chat-messages" #messagesContainer>
+          @for (msg of conv.messages; track $index) {
+            <div class="message" [class.mine]="isMine(msg)">
+              @if (msg.type === 'text') {
+                <p>{{ msg.content }}</p>
+              }
+              @if (msg.type === 'image' && msg.mediaUrl) {
+                <img [src]="api.mediaUrl(msg.mediaUrl)" alt="" />
+                @if (msg.content) { <p>{{ msg.content }}</p> }
+              }
+              @if (msg.type === 'video' && msg.mediaUrl) {
+                <video [src]="api.mediaUrl(msg.mediaUrl)" controls></video>
+              }
+            </div>
+          }
+        </div>
+        <footer class="chat-input">
+          <label class="file-label">Joindre
+            <input type="file" accept="image/*,video/*" hidden (change)="onFileSelect($event)" />
+          </label>
+          <input class="input" placeholder="Votre message..." [(ngModel)]="messageText" (keyup.enter)="send()" />
+          <button class="btn btn-primary" (click)="send()">Envoyer</button>
+        </footer>
+      } @else {
+        <div class="empty-state">
+          <h3>Sélectionnez une conversation</h3>
+          <p>Vos messages privés apparaîtront ici.</p>
+        </div>
+      }
+    </section>
+  </div>
+</div>

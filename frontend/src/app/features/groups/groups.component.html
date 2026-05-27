@@ -1,0 +1,47 @@
+<div class="groups-page">
+  <div class="page-header">
+    <h1 class="page-title">Groupes</h1>
+    <button class="btn btn-primary" (click)="showCreate.set(true)">+ Créer un groupe</button>
+  </div>
+
+  @if (showCreate()) {
+    <div class="card create-group">
+      <input class="input" placeholder="Nom du groupe" [(ngModel)]="newName" />
+      <textarea class="input" placeholder="Description" [(ngModel)]="newDesc"></textarea>
+      <div class="actions">
+        <button class="btn btn-secondary" (click)="showCreate.set(false)">Annuler</button>
+        <button class="btn btn-primary" (click)="create()">Créer</button>
+      </div>
+    </div>
+  }
+
+  <h2 class="section-title">Mes groupes</h2>
+  <div class="group-grid">
+    @for (g of myGroups(); track g.id) {
+      <a class="group-card card" [routerLink]="['/groups', g.id]">
+        <div class="group-icon">G</div>
+        <h3>{{ g.name }}</h3>
+        <p>{{ g.description || 'Sans description' }}</p>
+        <span class="member-count">{{ g.memberCount }} membres</span>
+      </a>
+    } @empty {
+      <p class="empty-hint">Vous n'avez rejoint aucun groupe.</p>
+    }
+  </div>
+
+  <h2 class="section-title">Découvrir</h2>
+  <div class="group-grid">
+    @for (g of discover(); track g.id) {
+      <div class="group-card card">
+        <div class="group-icon">Public</div>
+        <h3>{{ g.name }}</h3>
+        <p>{{ g.description || 'Sans description' }}</p>
+        <span class="member-count">{{ g.memberCount }} membres</span>
+        <div class="card-actions">
+          <a class="btn btn-secondary btn-sm" [routerLink]="['/groups', g.id]">Voir</a>
+          <button class="btn btn-primary btn-sm" (click)="join(g.id)">Rejoindre</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

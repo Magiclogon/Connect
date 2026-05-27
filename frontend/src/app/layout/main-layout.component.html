@@ -1,0 +1,86 @@
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">C</span>
+      <span class="brand-name">Connect</span>
+    </div>
+
+    <div class="top-actions">
+      <input class="input search" placeholder="Rechercher (démo)" />
+    </div>
+
+    <div class="top-user" *ngIf="auth.currentUser() as user">
+      <div class="avatar">{{ user.displayName.charAt(0).toUpperCase() }}</div>
+      <span class="top-user-name">{{ user.displayName }}</span>
+      <button class="btn btn-ghost btn-sm" (click)="logout()">Déconnexion</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside class="left-nav">
+      <nav class="nav">
+        <a routerLink="/feed" routerLinkActive="active">Fil d'actualité</a>
+        <a routerLink="/friends" routerLinkActive="active">Amis</a>
+        <a routerLink="/messages" routerLinkActive="active">
+          Messages
+          @if (unreadMessages > 0) {
+            <span class="badge">{{ unreadMessages }}</span>
+          }
+        </a>
+        <a routerLink="/groups" routerLinkActive="active">Groupes</a>
+        <a routerLink="/profile" routerLinkActive="active">Profil</a>
+      </nav>
+    </aside>
+
+    <main class="center">
+      <router-outlet />
+    </main>
+
+    <aside class="right-panel">
+      <div class="panel-card card">
+        <h3 class="panel-title">Vous connaissez peut-être…</h3>
+        <p class="panel-hint">Basé sur le graphe Neo4j (amis en commun, groupes).</p>
+        @if (suggestions.length === 0) {
+          <p class="panel-subtitle">Aucune suggestion pour le moment.</p>
+        } @else {
+          @for (s of suggestions; track s.id) {
+            <div class="suggestion-row">
+              <div>
+                <div class="suggestion-name">{{ s.displayName }}</div>
+                <div class="suggestion-meta">
+                  @if ((s.mutualFriends || 0) > 0) {
+                    <span>{{ s.mutualFriends }} ami(s) en commun</span>
+                  }
+                  @if ((s.mutualFriends || 0) > 0 && (s.sharedGroups || 0) > 0) {
+                    <span> · </span>
+                  }
+                  @if ((s.sharedGroups || 0) > 0) {
+                    <span>{{ s.sharedGroups }} groupe(s) en commun</span>
+                  }
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm" (click)="addSuggestedFriend(s.id)">Ajouter</button>
+            </div>
+          }
+        }
+      </div>
+      <div class="panel-card card notifications-card">
+        <div class="notif-header">
+          <h3 class="panel-title">Notifications</h3>
+          @if (unreadNotifications > 0) {
+            <button class="btn btn-ghost btn-sm" (click)="markNotificationsRead()">Tout lire</button>
+          }
+        </div>
+        @if (notifications.length === 0) {
+          <p class="panel-subtitle">Aucune notification.</p>
+        } @else {
+          @for (n of notifications; track n.id) {
+            <div class="notif-row" [class.unread]="!n.read">
+              <div class="notif-text">{{ n.message }}</div>
+            </div>
+          }
+        }
+      </div>
+    </aside>
+  </div>
+</div>

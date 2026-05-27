@@ -1,0 +1,129 @@
+<div class="friends-page">
+  <h1 class="page-title">Amis</h1>
+
+  <div class="tabs">
+    <button [class.active]="activeTab() === 'friends'" (click)="activeTab.set('friends')">
+      Mes amis ({{ friends().length }})
+    </button>
+    <button [class.active]="activeTab() === 'requests'" (click)="activeTab.set('requests')">
+      Demandes ({{ pending().length }})
+    </button>
+    <button [class.active]="activeTab() === 'suggestions'" (click)="activeTab.set('suggestions')">
+      Suggestions
+    </button>
+    <button [class.active]="activeTab() === 'search'" (click)="activeTab.set('search')">Rechercher</button>
+  </div>
+
+  @if (actionError()) {
+    <div class="error-msg card">{{ actionError() }}</div>
+  }
+
+  @if (activeTab() === 'friends') {
+    <div class="user-grid">
+      @for (user of friends(); track user.id) {
+        <div class="user-card card">
+          <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" size="lg" />
+          <h3>{{ user.displayName }}</h3>
+          <p>{{ user.bio || 'Pas de bio' }}</p>
+          <button class="btn btn-secondary btn-sm" (click)="message(user.id)">Message</button>
+        </div>
+      } @empty {
+        <div class="empty-state card"><p>Aucun ami pour le moment.</p></div>
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'requests') {
+    @for (user of pending(); track user.id) {
+      <div class="request-card card">
+        <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" />
+        <div class="request-info">
+          <strong>{{ user.displayName }}</strong>
+          <span>{{ user.email }}</span>
+        </div>
+        <div class="request-actions">
+          <button class="btn btn-primary btn-sm" (click)="accept(user.id)">Accepter</button>
+          <button class="btn btn-secondary btn-sm" (click)="reject(user.id)">Refuser</button>
+        </div>
+      </div>
+    } @empty {
+      <div class="empty-state card"><p>Aucune demande en attente.</p></div>
+    }
+  }
+
+  @if (activeTab() === 'suggestions') {
+    <div class="suggestions-intro card">
+      <h2 class="suggestions-title">Personnes que vous connaissez peut-être</h2>
+      <p class="suggestions-desc">
+        Les suggestions sont calculées dans <strong>Neo4j</strong> sur le graphe social&nbsp;: d’abord les
+        <strong>amis de vos amis</strong> (nombre d’amis en commun), puis les personnes avec qui vous partagez des
+        <strong>groupes</strong>, sans proposer des personnes déjà amies ou déjà en demande.
+      </p>
+    </div>
+    @for (user of suggestions(); track user.id) {
+      <div class="request-card card">
+        <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" />
+        <div class="request-info">
+          <a class="suggestion-profile-link" [routerLink]="['/profile', user.id]">{{ user.displayName }}</a>
+          <span class="suggestion-reason">
+            @if (user.recommendationReason === 'mutual_friends') {
+              {{ user.mutualFriends }} ami(s) en commun (graphe 2 sauts)
+            } @else if (user.recommendationReason === 'shared_groups') {
+              {{ user.sharedGroups }} groupe(s) en commun
+            } @else {
+              {{ user.mutualFriends }} ami(s) en commun · {{ user.sharedGroups }} groupe(s) en commun
+            }
+          </span>
+        </div>
+        @if (isFriend(user.id)) {
+          <span class="badge">Ami</span>
+        } @else if (isSent(user.id)) {
+          <span class="badge" style="background: var(--text-muted)">Envoyée</span>
+        } @else {
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="sendRequest(user.id)"
+            [disabled]="actionLoading()"
+          >
+            {{ actionLoading() ? '...' : 'Ajouter' }}
+          </button>
+        }
+      </div>
+    } @empty {
+      <div class="empty-state card">
+        <p>
+          Aucune suggestion pour l’instant. Ajoutez des amis ou rejoignez des groupes pour enrichir le graphe Neo4j.
+        </p>
+      </div>
+    }
+  }
+
+  @if (activeTab() === 'search') {
+    <div class="search-bar">
+      <input class="input" placeholder="Rechercher par nom ou email..." [(ngModel)]="searchQuery" (keyup.enter)="search()" />
+      <button class="btn btn-primary" (click)="search()">Rechercher</button>
+    </div>
+    @for (user of searchResults(); track user.id) {
+      <div class="request-card card">
+        <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" />
+        <div class="request-info">
+          <strong>{{ user.displayName }}</strong>
+          <span>{{ user.email }}</span>
+        </div>
+        @if (isFriend(user.id)) {
+          <span class="badge">Ami</span>
+        } @else if (isSent(user.id)) {
+          <span class="badge" style="background: var(--text-muted)">Envoyée</span>
+        } @else {
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="sendRequest(user.id)"
+            [disabled]="actionLoading()"
+          >
+            {{ actionLoading() ? '...' : 'Ajouter' }}
+          </button>
+        }
+      </div>
+    }
+  }
+</div>
