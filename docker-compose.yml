@@ -69,7 +69,7 @@ services:
     container_name: social-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3456:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -98,7 +98,7 @@ services:
     container_name: social-frontend
     restart: unless-stopped
     ports:
-      - "4200:80"
+      - "4567:80"
     depends_on:
       - backend
 
