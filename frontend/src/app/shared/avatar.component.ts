@@ -6,8 +6,8 @@ import { ApiService } from '../core/services/api.service';
   standalone: true,
   template: `
     <div class="avatar" [class.avatar-lg]="size === 'lg'">
-      @if (url) {
-        <img [src]="api.mediaUrl(url)" [alt]="name" />
+      @if (mediaId) {
+        <img [src]="api.mediaUrl(mediaId)" [alt]="name" />
       } @else {
         {{ initial }}
       }
@@ -16,7 +16,7 @@ import { ApiService } from '../core/services/api.service';
 })
 export class AvatarComponent {
   @Input() name = '?';
-  @Input() url = '';
+  @Input() mediaId = '';
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
 
   constructor(public api: ApiService) {}

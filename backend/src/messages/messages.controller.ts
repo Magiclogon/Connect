@@ -38,7 +38,7 @@ export class MessagesController {
   send(
     @CurrentUser() user: { userId: string },
     @Param('id') id: string,
-    @Body() body: { type: string; content?: string; mediaUrl?: string },
+    @Body() body: { type: string; content?: string; mediaId?: string },
   ) {
     return this.messagesService.sendMessage(id, user.userId, body);
   }

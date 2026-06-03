@@ -10,8 +10,8 @@ export class MediaItem {
   @Prop({ required: true, enum: ['text', 'image', 'video'] })
   type: MediaType;
 
-  @Prop({ default: '' })
-  url: string;
+  @Prop({ type: String, default: null })
+  mediaId: string | null;
 
   @Prop({ default: '' })
   text: string;
@@ -43,8 +43,8 @@ export class CommentReply {
   @Prop({ required: true })
   content: string;
 
-  @Prop({ default: '' })
-  mediaUrl: string;
+  @Prop({ type: String, default: null })
+  mediaId: string | null;
 
   @Prop({ enum: ['text', 'image', 'video'], default: 'text' })
   mediaType: string;
@@ -58,8 +58,8 @@ export class Comment {
   @Prop({ required: true })
   content: string;
 
-  @Prop({ default: '' })
-  mediaUrl: string;
+  @Prop({ type: String, default: null })
+  mediaId: string | null;
 
   @Prop({ enum: ['text', 'image', 'video'], default: 'text' })
   mediaType: string;

@@ -10,7 +10,7 @@
         >
           <app-avatar
             [name]="conv.otherParticipant?.displayName || '?'"
-            [url]="conv.otherParticipant?.avatarUrl || ''"
+            [mediaId]="conv.otherParticipant?.avatarMediaId || ''"
           />
           <div class="conv-preview">
             <a class="name-link" [routerLink]="['/profile', conv.otherParticipant?.id]">
@@ -34,7 +34,7 @@
         <header class="chat-header">
           <app-avatar
             [name]="conv.otherParticipant?.displayName || '?'"
-            [url]="conv.otherParticipant?.avatarUrl || ''"
+            [mediaId]="conv.otherParticipant?.avatarMediaId || ''"
           />
           <a class="name-link" [routerLink]="['/profile', conv.otherParticipant?.id]">
             <strong>{{ conv.otherParticipant?.displayName }}</strong>
@@ -46,12 +46,12 @@
               @if (msg.type === 'text') {
                 <p>{{ msg.content }}</p>
               }
-              @if (msg.type === 'image' && msg.mediaUrl) {
-                <img [src]="api.mediaUrl(msg.mediaUrl)" alt="" />
+              @if (msg.type === 'image' && msg.mediaId) {
+                <img [src]="api.mediaUrl(msg.mediaId)" alt="" />
                 @if (msg.content) { <p>{{ msg.content }}</p> }
               }
-              @if (msg.type === 'video' && msg.mediaUrl) {
-                <video [src]="api.mediaUrl(msg.mediaUrl)" controls></video>
+              @if (msg.type === 'video' && msg.mediaId) {
+                <video [src]="api.mediaUrl(msg.mediaId)" controls></video>
               }
             </div>
           }

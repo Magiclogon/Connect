@@ -11,8 +11,8 @@ export class Story {
   @Prop({ required: true, enum: ['image', 'video', 'text'] })
   type: string;
 
-  @Prop({ default: '' })
-  mediaUrl: string;
+  @Prop({ type: String, default: null })
+  mediaId: string | null;
 
   @Prop({ default: '' })
   text: string;

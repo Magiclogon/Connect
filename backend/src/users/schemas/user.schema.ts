@@ -17,11 +17,11 @@ export class User {
   @Prop({ trim: true, default: '' })
   bio: string;
 
-  @Prop({ default: '' })
-  avatarUrl: string;
+  @Prop({ type: String, default: null })
+  avatarMediaId: string | null;
 
-  @Prop({ default: '' })
-  coverUrl: string;
+  @Prop({ type: String, default: null })
+  coverMediaId: string | null;
 
   @Prop({ default: '' })
   address: string;

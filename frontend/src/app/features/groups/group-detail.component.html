@@ -14,7 +14,7 @@
         <h3>Membres</h3>
         @for (m of members(); track m.id) {
           <div class="member-row">
-            <app-avatar [name]="m.displayName" [url]="m.avatarUrl || ''" />
+            <app-avatar [name]="m.displayName" [mediaId]="m.avatarMediaId || ''" />
             <a [routerLink]="['/profile', m.id]">{{ m.displayName }}</a>
             @if (m.role === 'admin') { <span class="badge">Admin</span> }
           </div>
@@ -29,13 +29,13 @@
         @for (post of posts(); track post.id) {
           <article class="card post-item">
             <div class="post-header">
-              <app-avatar [name]="post.author.displayName" [url]="post.author.avatarUrl || ''" />
+              <app-avatar [name]="post.author.displayName" [mediaId]="post.author.avatarMediaId || ''" />
               <a [routerLink]="['/profile', post.author.id]"><strong>{{ post.author.displayName }}</strong></a>
             </div>
             <p>{{ post.content }}</p>
             @for (m of post.media; track $index) {
-              @if (m.url) {
-                <img [src]="api.mediaUrl(m.url)" class="post-img" alt="" />
+              @if (m.mediaId) {
+                <img [src]="api.mediaUrl(m.mediaId)" class="post-img" alt="" />
               }
             }
           </article>

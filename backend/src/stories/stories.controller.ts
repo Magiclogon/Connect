@@ -16,7 +16,7 @@ export class StoriesController {
   @Post()
   create(
     @CurrentUser() user: { userId: string },
-    @Body() body: { type: string; mediaUrl?: string; text?: string; backgroundColor?: string },
+    @Body() body: { type: string; mediaId?: string; text?: string; backgroundColor?: string },
   ) {
     return this.storiesService.create(user.userId, body);
   }

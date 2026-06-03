@@ -10,7 +10,7 @@
     @for (group of stories(); track group.author.id) {
       <div class="story-item" (click)="viewStories(group)">
         <div class="story-ring">
-          <app-avatar [name]="group.author.displayName" [url]="group.author.avatarUrl || ''" />
+          <app-avatar [name]="group.author.displayName" [mediaId]="group.author.avatarMediaId || ''" />
         </div>
         <span>{{ group.author.displayName }}</span>
       </div>
@@ -47,7 +47,7 @@
     @for (post of posts(); track post.id) {
       <article class="post-card card">
         <header class="post-header">
-          <app-avatar [name]="post.author.displayName" [url]="post.author.avatarUrl || ''" />
+          <app-avatar [name]="post.author.displayName" [mediaId]="post.author.avatarMediaId || ''" />
           <div>
             <a class="name-link" [routerLink]="['/profile', post.author.id]"><strong>{{ post.author.displayName }}</strong></a>
             <time>{{ post.createdAt | date:'short' }}</time>
@@ -57,11 +57,11 @@
           <p class="post-content">{{ post.content }}</p>
         }
         @for (m of post.media; track $index) {
-          @if (m.type === 'image' && m.url) {
-            <img class="post-media" [src]="api.mediaUrl(m.url)" alt="" />
+          @if (m.type === 'image' && m.mediaId) {
+            <img class="post-media" [src]="api.mediaUrl(m.mediaId)" alt="" />
           }
-          @if (m.type === 'video' && m.url) {
-            <video class="post-media" [src]="api.mediaUrl(m.url)" controls></video>
+          @if (m.type === 'video' && m.mediaId) {
+            <video class="post-media" [src]="api.mediaUrl(m.mediaId)" controls></video>
           }
         }
         <div class="reactions-bar">
@@ -79,7 +79,7 @@
         <div class="comments-section">
           @for (c of post.comments; track c.id) {
             <div class="comment">
-              <app-avatar [name]="c.author.displayName" [url]="c.author.avatarUrl || ''" />
+              <app-avatar [name]="c.author.displayName" [mediaId]="c.author.avatarMediaId || ''" />
               <div class="comment-body">
                 <a class="name-link" [routerLink]="['/profile', c.author.id]"><strong>{{ c.author.displayName }}</strong></a>
                 <p>{{ c.content }}</p>
@@ -96,7 +96,7 @@
                   <div class="replies">
                     @for (r of c.replies; track r.id) {
                       <div class="reply-item">
-                        <app-avatar [name]="r.author.displayName" [url]="r.author.avatarUrl || ''" />
+                        <app-avatar [name]="r.author.displayName" [mediaId]="r.author.avatarMediaId || ''" />
                         <div class="reply-body">
                           <a class="name-link" [routerLink]="['/profile', r.author.id]"><strong>{{ r.author.displayName }}</strong></a>
                           <p>{{ r.content }}</p>
@@ -141,7 +141,7 @@
       <h2>Détails des réactions</h2>
       @for (item of reactionsDetail(); track item.user.id) {
         <div class="reaction-row">
-          <app-avatar [name]="item.user.displayName" [url]="item.user.avatarUrl || ''" />
+          <app-avatar [name]="item.user.displayName" [mediaId]="item.user.avatarMediaId || ''" />
           <div class="reaction-info">
             <div class="name">{{ item.user.displayName }}</div>
             <div class="type">{{ reactionLabels[item.type] }}</div>
@@ -191,11 +191,11 @@
             <p>{{ story.text }}</p>
           </div>
         }
-        @if (story.type === 'image' && story.mediaUrl) {
-          <img [src]="api.mediaUrl(story.mediaUrl)" alt="" />
+        @if (story.type === 'image' && story.mediaId) {
+          <img [src]="api.mediaUrl(story.mediaId)" alt="" />
         }
-        @if (story.type === 'video' && story.mediaUrl) {
-          <video [src]="api.mediaUrl(story.mediaUrl)" autoplay controls></video>
+        @if (story.type === 'video' && story.mediaId) {
+          <video [src]="api.mediaUrl(story.mediaId)" autoplay controls></video>
         }
         <p class="story-author">{{ viewingStory.author.displayName }}</p>
       }

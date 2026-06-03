@@ -53,15 +53,11 @@ export class ChatGateway implements OnGatewayConnection, OnModuleInit {
   async handleMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody()
-    data: { conversationId: string; type: string; content?: string; mediaUrl?: string },
+    data: { conversationId: string; type: string; content?: string; mediaId?: string },
   ) {
     const userId = client.data.userId;
     if (!userId) return;
-    const message = await this.messagesService.sendMessage(
-      data.conversationId,
-      userId,
-      data,
-    );
+    const message = await this.messagesService.sendMessage(data.conversationId, userId, data);
     this.server.to(`conversation:${data.conversationId}`).emit('newMessage', {
       conversationId: data.conversationId,
       message,

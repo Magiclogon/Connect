@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { RedisKeys, RedisTTL } from '../redis/redis-keys';
+import { RedisService } from '../redis/redis.service';
 import { UsersService } from '../users/users.service';
 import { Notification, NotificationDocument } from './schemas/notification.schema';
 
@@ -11,6 +13,7 @@ export class NotificationsService {
   constructor(
     @InjectModel(Notification.name) private notifModel: Model<NotificationDocument>,
     private usersService: UsersService,
+    private redis: RedisService,
   ) {}
 
   setEmitter(fn: (userId: string, notification: unknown) => void) {
@@ -34,17 +37,24 @@ export class NotificationsService {
       postId: data.postId ? new Types.ObjectId(data.postId) : null,
       conversationId: data.conversationId ? new Types.ObjectId(data.conversationId) : null,
     });
+    await this.redis.del(RedisKeys.notifList(data.userId));
     const enriched = await this.enrich(notif);
     this.emitFn?.(data.userId, enriched);
     return enriched;
   }
 
   async getForUser(userId: string, limit = 30) {
+    const cacheKey = RedisKeys.notifList(userId);
+    const cached = await this.redis.getJson<unknown[]>(cacheKey);
+    if (cached) return cached;
+
     const notifs = await this.notifModel
       .find({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
       .limit(limit);
-    return Promise.all(notifs.map((n) => this.enrich(n)));
+    const enriched = await Promise.all(notifs.map((n) => this.enrich(n)));
+    await this.redis.setJson(cacheKey, enriched, RedisTTL.notifList);
+    return enriched;
   }
 
   async getUnreadCount(userId: string) {
@@ -59,6 +69,7 @@ export class NotificationsService {
       { userId: new Types.ObjectId(userId), read: false },
       { read: true },
     );
+    await this.redis.del(RedisKeys.notifList(userId));
     return { message: 'OK' };
   }
 
@@ -67,6 +78,7 @@ export class NotificationsService {
       { _id: id, userId: new Types.ObjectId(userId) },
       { read: true },
     );
+    await this.redis.del(RedisKeys.notifList(userId));
     return { message: 'OK' };
   }
 

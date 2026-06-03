@@ -27,7 +27,7 @@ export class ChatService {
     conversationId: string;
     type: string;
     content?: string;
-    mediaUrl?: string;
+    mediaId?: string;
   }): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const socket = this.connect();

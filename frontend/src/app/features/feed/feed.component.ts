@@ -8,22 +8,22 @@ import { AvatarComponent } from '../../shared/avatar.component';
 interface User {
   id: string;
   displayName: string;
-  avatarUrl?: string;
+  avatarMediaId?: string | null;
 }
 
 interface Post {
   id: string;
   content: string;
-  media: { type: string; url?: string; text?: string }[];
+  media: { type: string; mediaId?: string | null; text?: string }[];
   reactions: { userId: string; type: string }[];
   comments: {
     id: string;
     content: string;
     author: User;
-    mediaUrl?: string;
+    mediaId?: string | null;
     mediaType?: string;
     reactions: { userId: string; type: string }[];
-    replies: { id: string; content: string; author: User; mediaUrl?: string; mediaType?: string }[];
+    replies: { id: string; content: string; author: User; mediaId?: string | null; mediaType?: string }[];
   }[];
   author: User;
   createdAt: string;
@@ -31,7 +31,7 @@ interface Post {
 
 interface StoryGroup {
   author: User;
-  stories: { id: string; type: string; mediaUrl?: string; text?: string; backgroundColor?: string }[];
+  stories: { id: string; type: string; mediaId?: string | null; text?: string; backgroundColor?: string }[];
 }
 
 @Component({
@@ -102,7 +102,7 @@ export class FeedComponent implements OnInit {
       return;
     }
     this.postError.set('');
-    const media: { type: string; url?: string; text?: string }[] = [];
+    const media: { type: string; mediaId?: string; text?: string }[] = [];
     const publish = (mediaItems: typeof media) => {
       this.api.post('/posts', { content: this.newPost.trim(), media: mediaItems }).subscribe({
         next: () => {
@@ -118,9 +118,10 @@ export class FeedComponent implements OnInit {
       this.api.upload(this.selectedFile).subscribe({
         next: (res) => {
           const type = this.selectedFile!.type.startsWith('video') ? 'video' : 'image';
-          media.push({ type, url: res.url });
+          media.push({ type, mediaId: res.mediaId });
           publish(media);
         },
+        error: (err) => this.postError.set(this.api.uploadErrorMessage(err)),
       });
     } else {
       publish(media);
@@ -192,12 +193,12 @@ export class FeedComponent implements OnInit {
   }
 
   publishStory() {
-    const publish = (mediaUrl?: string) => {
+    const publish = (mediaId?: string) => {
       this.api
         .post('/stories', {
           type: this.storyType(),
           text: this.storyText,
-          mediaUrl,
+          mediaId,
           backgroundColor: '#6366f1',
         })
         .subscribe({
@@ -212,7 +213,8 @@ export class FeedComponent implements OnInit {
 
     if (this.storyFile && this.storyType() !== 'text') {
       this.api.upload(this.storyFile).subscribe({
-        next: (res) => publish(res.url),
+        next: (res) => publish(res.mediaId),
+        error: (err) => this.postError.set(this.api.uploadErrorMessage(err)),
       });
     } else {
       publish();

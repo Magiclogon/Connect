@@ -107,7 +107,7 @@ export class GroupsService {
       id: group._id.toString(),
       name: group.name,
       description: group.description,
-      avatarUrl: group.avatarUrl,
+      avatarMediaId: group.avatarMediaId,
       ownerId: group.ownerId,
       memberCount: count,
       createdAt: (group as GroupDocument & { createdAt?: Date }).createdAt,

@@ -2,6 +2,8 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { FriendsService } from '../friends/friends.service';
+import { MediaService } from '../media/media.service';
+import { RedisKeys, RedisTTL } from '../redis/redis-keys';
 import { RedisService } from '../redis/redis.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -15,22 +17,35 @@ export class MessagesService {
     private friendsService: FriendsService,
     private redis: RedisService,
     private notifications: NotificationsService,
+    private mediaService: MediaService,
   ) {}
 
   async getConversationById(conversationId: string, userId: string) {
+    const cacheKey = RedisKeys.conversation(conversationId, userId);
+    const cached = await this.redis.getJson<unknown>(cacheKey);
+    if (cached) return cached;
+
     const conv = await this.convModel.findById(conversationId);
     if (!conv) throw new NotFoundException('Conversation introuvable');
     if (!conv.participants.some((p) => p.toString() === userId)) {
       throw new ForbiddenException('Non autorisé');
     }
-    return this.enrichConversation(conv, userId);
+    const enriched = await this.enrichConversation(conv, userId);
+    await this.redis.setJson(cacheKey, enriched, RedisTTL.conversation);
+    return enriched;
   }
 
   async getConversations(userId: string) {
+    const cacheKey = RedisKeys.conversationsList(userId);
+    const cached = await this.redis.getJson<unknown[]>(cacheKey);
+    if (cached) return cached;
+
     const convs = await this.convModel
       .find({ participants: new Types.ObjectId(userId), isGroup: false })
       .sort({ updatedAt: -1 });
-    return Promise.all(convs.map((c) => this.enrichConversation(c, userId)));
+    const enriched = await Promise.all(convs.map((c) => this.enrichConversation(c, userId)));
+    await this.redis.setJson(cacheKey, enriched, RedisTTL.conversationsList);
+    return enriched;
   }
 
   async getOrCreatePrivate(userId: string, otherUserId: string) {
@@ -46,6 +61,8 @@ export class MessagesService {
         participants: [new Types.ObjectId(userId), new Types.ObjectId(otherUserId)],
         messages: [],
       });
+      await this.redis.del(RedisKeys.conversationsList(userId));
+      await this.redis.del(RedisKeys.conversationsList(otherUserId));
     }
     return this.enrichConversation(conv, userId);
   }
@@ -53,8 +70,11 @@ export class MessagesService {
   async sendMessage(
     conversationId: string,
     senderId: string,
-    data: { type: string; content?: string; mediaUrl?: string },
+    data: { type: string; content?: string; mediaId?: string },
   ) {
+    if (data.mediaId) {
+      await this.mediaService.assertOwnedBy(data.mediaId, senderId);
+    }
     const conv = await this.convModel.findById(conversationId);
     if (!conv) throw new NotFoundException('Conversation introuvable');
     if (!conv.participants.some((p) => p.toString() === senderId)) {
@@ -64,23 +84,18 @@ export class MessagesService {
       senderId: new Types.ObjectId(senderId),
       type: data.type,
       content: data.content || '',
-      mediaUrl: data.mediaUrl || '',
+      mediaId: data.mediaId || null,
       createdAt: new Date(),
       read: false,
     };
     conv.messages.push(message as Conversation['messages'][0]);
     await conv.save();
-    await this.redis.set(
-      `unread:${conversationId}:${senderId}`,
-      '0',
-    );
+
     for (const p of conv.participants) {
-      if (p.toString() !== senderId) {
-        const key = `unread:${conversationId}:${p.toString()}`;
-        const current = parseInt((await this.redis.get(key)) || '0', 10);
-        await this.redis.set(key, String(current + 1), 86400);
-      }
+      await this.redis.del(RedisKeys.conversationsList(p.toString()));
+      await this.redis.del(RedisKeys.conversation(conversationId, p.toString()));
     }
+
     const sender = await this.usersService.findById(senderId);
     for (const p of conv.participants) {
       if (p.toString() !== senderId) {
@@ -104,7 +119,8 @@ export class MessagesService {
       if (m.senderId.toString() !== userId) m.read = true;
     });
     await conv.save();
-    await this.redis.del(`unread:${conversationId}:${userId}`);
+    await this.redis.del(RedisKeys.conversation(conversationId, userId));
+    await this.redis.del(RedisKeys.conversationsList(userId));
   }
 
   async getTotalUnreadCount(userId: string): Promise<number> {
@@ -112,15 +128,13 @@ export class MessagesService {
       participants: new Types.ObjectId(userId),
       isGroup: false,
     });
-    let total = 0;
-    for (const conv of convs) {
-      const unread = parseInt(
-        (await this.redis.get(`unread:${conv._id}:${userId}`)) || '0',
-        10,
-      );
-      total += unread;
-    }
-    return total;
+    return convs.reduce((sum, conv) => sum + this.countUnread(conv, userId), 0);
+  }
+
+  private countUnread(conv: ConversationDocument, userId: string): number {
+    return conv.messages.filter(
+      (m) => m.senderId.toString() !== userId && !m.read,
+    ).length;
   }
 
   private async enrichConversation(conv: ConversationDocument, currentUserId: string) {
@@ -136,10 +150,7 @@ export class MessagesService {
     );
     const other = participants.find((p) => p && p.id !== currentUserId);
     const lastMessage = conv.messages[conv.messages.length - 1];
-    const unread = parseInt(
-      (await this.redis.get(`unread:${conv._id}:${currentUserId}`)) || '0',
-      10,
-    );
+    const unread = this.countUnread(conv, currentUserId);
     return {
       id: conv._id.toString(),
       participants: participants.filter(Boolean),
@@ -152,7 +163,7 @@ export class MessagesService {
               senderId: m.senderId.toString(),
               type: m.type,
               content: m.content,
-              mediaUrl: m.mediaUrl,
+              mediaId: m.mediaId,
               createdAt: m.createdAt,
               read: m.read,
               sender: this.usersService.toPublic(sender),

@@ -2,7 +2,9 @@ import { BadRequestException, Injectable, NotFoundException, ForbiddenException 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { FriendsService } from '../friends/friends.service';
+import { RedisKeys, RedisTTL } from '../redis/redis-keys';
 import { RedisService } from '../redis/redis.service';
+import { MediaService } from '../media/media.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Post, PostDocument } from './schemas/post.schema';
@@ -15,16 +17,22 @@ export class PostsService {
     private usersService: UsersService,
     private redis: RedisService,
     private notifications: NotificationsService,
+    private mediaService: MediaService,
   ) {}
 
   async create(
     authorId: string,
-    data: { content?: string; media?: { type: string; url?: string; text?: string }[]; groupId?: string },
+    data: { content?: string; media?: { type: string; mediaId?: string; text?: string }[]; groupId?: string },
   ) {
     const content = (data.content || '').trim();
     const media = data.media || [];
     if (!content && media.length === 0) {
       throw new BadRequestException('La publication ne peut pas être vide');
+    }
+    for (const item of media) {
+      if (item.mediaId) {
+        await this.mediaService.assertOwnedBy(item.mediaId, authorId);
+      }
     }
     const post = await this.postModel.create({
       authorId: new Types.ObjectId(authorId),
@@ -32,14 +40,14 @@ export class PostsService {
       media,
       groupId: data.groupId ? new Types.ObjectId(data.groupId) : null,
     });
-    await this.redis.invalidatePattern('feed:*');
+    await this.redis.invalidatePattern(RedisKeys.feedPattern());
     return this.enrichPost(post);
   }
 
   async getFeed(userId: string, page = 1, limit = 20) {
-    const cacheKey = `feed:${userId}:${page}`;
-    const cached = await this.redis.get(cacheKey);
-    if (cached) return JSON.parse(cached);
+    const cacheKey = RedisKeys.feed(userId, page);
+    const cached = await this.redis.getJson<unknown[]>(cacheKey);
+    if (cached) return cached;
 
     const friendIds = await this.friendsService.getFriendIds(userId);
     const authorIds = [new Types.ObjectId(userId), ...friendIds.map((id) => new Types.ObjectId(id))];
@@ -51,7 +59,7 @@ export class PostsService {
       .limit(limit);
 
     const enriched = await Promise.all(posts.map((p) => this.enrichPost(p)));
-    await this.redis.set(cacheKey, JSON.stringify(enriched), 120);
+    await this.redis.setJson(cacheKey, enriched, RedisTTL.feed);
     return enriched;
   }
 
@@ -80,7 +88,7 @@ export class PostsService {
     post.reactions = post.reactions.filter((r) => r.userId.toString() !== userId);
     post.reactions.push({ userId: new Types.ObjectId(userId), type } as Post['reactions'][0]);
     await post.save();
-    await this.redis.invalidatePattern('feed:*');
+    await this.redis.invalidatePattern(RedisKeys.feedPattern());
 
     const actor = await this.usersService.findById(userId);
     await this.notifications.create({
@@ -116,22 +124,25 @@ export class PostsService {
   async addComment(
     postId: string,
     userId: string,
-    data: { content: string; mediaUrl?: string; mediaType?: string },
+    data: { content: string; mediaId?: string; mediaType?: string },
   ) {
     const content = (data.content || '').trim();
-    if (!content && !data.mediaUrl) {
+    if (!content && !data.mediaId) {
       throw new BadRequestException('Le commentaire ne peut pas être vide');
+    }
+    if (data.mediaId) {
+      await this.mediaService.assertOwnedBy(data.mediaId, userId);
     }
     const post = await this.postModel.findById(postId);
     if (!post) throw new NotFoundException('Publication introuvable');
     post.comments.push({
       userId: new Types.ObjectId(userId),
       content,
-      mediaUrl: data.mediaUrl || '',
+      mediaId: data.mediaId || null,
       mediaType: data.mediaType || 'text',
     } as Post['comments'][0]);
     await post.save();
-    await this.redis.invalidatePattern('feed:*');
+    await this.redis.invalidatePattern(RedisKeys.feedPattern());
 
     const actor = await this.usersService.findById(userId);
     await this.notifications.create({
@@ -160,7 +171,7 @@ export class PostsService {
     comment.reactions = comment.reactions.filter((r) => r.userId.toString() !== userId);
     comment.reactions.push({ userId: new Types.ObjectId(userId), type } as Post['comments'][0]['reactions'][0]);
     await post.save();
-    await this.redis.invalidatePattern('feed:*');
+    await this.redis.invalidatePattern(RedisKeys.feedPattern());
     return this.enrichPost(post);
   }
 
@@ -168,10 +179,13 @@ export class PostsService {
     postId: string,
     commentId: string,
     userId: string,
-    data: { content: string; mediaUrl?: string; mediaType?: string },
+    data: { content: string; mediaId?: string; mediaType?: string },
   ) {
     const content = (data.content || '').trim();
     if (!content) throw new BadRequestException('La réponse ne peut pas être vide');
+    if (data.mediaId) {
+      await this.mediaService.assertOwnedBy(data.mediaId, userId);
+    }
     const post = await this.postModel.findById(postId);
     if (!post) throw new NotFoundException('Publication introuvable');
     const comment = post.comments.find(
@@ -181,11 +195,11 @@ export class PostsService {
     comment.replies.push({
       userId: new Types.ObjectId(userId),
       content,
-      mediaUrl: data.mediaUrl || '',
+      mediaId: data.mediaId || null,
       mediaType: data.mediaType || 'text',
     } as Post['comments'][0]['replies'][0]);
     await post.save();
-    await this.redis.invalidatePattern('feed:*');
+    await this.redis.invalidatePattern(RedisKeys.feedPattern());
     return this.enrichPost(post);
   }
 
@@ -194,7 +208,7 @@ export class PostsService {
     if (!post) throw new NotFoundException('Publication introuvable');
     if (post.authorId.toString() !== userId) throw new ForbiddenException('Non autorisé');
     await post.deleteOne();
-    await this.redis.invalidatePattern('feed:*');
+    await this.redis.invalidatePattern(RedisKeys.feedPattern());
     return { message: 'Supprimé' };
   }
 
@@ -211,7 +225,7 @@ export class PostsService {
                 return {
                   id: (reply as { _id?: Types.ObjectId })._id?.toString(),
                   content: reply.content,
-                  mediaUrl: reply.mediaUrl,
+                  mediaId: reply.mediaId,
                   mediaType: reply.mediaType,
                   createdAt: (reply as { createdAt?: Date }).createdAt,
                   author: this.usersService.toPublic(replyUser),
@@ -224,7 +238,7 @@ export class PostsService {
           return {
             id: (c as { _id?: Types.ObjectId })._id?.toString(),
             content: c.content,
-            mediaUrl: c.mediaUrl,
+            mediaId: c.mediaId,
             mediaType: c.mediaType,
             createdAt: (c as { createdAt?: Date }).createdAt,
             author: this.usersService.toPublic(u),

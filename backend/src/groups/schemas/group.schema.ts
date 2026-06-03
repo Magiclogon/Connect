@@ -14,8 +14,8 @@ export class Group {
   @Prop({ default: '' })
   description: string;
 
-  @Prop({ default: '' })
-  avatarUrl: string;
+  @Prop({ type: String, default: null })
+  avatarMediaId: string | null;
 
   @Prop({ required: true })
   ownerId: string;

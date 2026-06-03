@@ -10,7 +10,7 @@ import { GroupsModule } from './groups/groups.module';
 import { FriendsModule } from './friends/friends.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
 import { RedisModule } from './redis/redis.module';
-import { UploadModule } from './upload/upload.module';
+import { MediaModule } from './media/media.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatGateway } from './chat/chat.gateway';
 import { AppController } from './app.controller';
@@ -29,7 +29,7 @@ import { AppController } from './app.controller';
     StoriesModule,
     GroupsModule,
     NotificationsModule,
-    UploadModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [ChatGateway],

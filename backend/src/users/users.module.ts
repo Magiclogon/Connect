@@ -5,10 +5,12 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { AuthModule } from '../auth/auth.module';
 import { FriendsModule } from '../friends/friends.module';
+import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MediaModule,
     forwardRef(() => AuthModule),
     forwardRef(() => FriendsModule),
   ],

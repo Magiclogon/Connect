@@ -50,8 +50,8 @@ export class UsersController {
     body: {
       displayName?: string;
       bio?: string;
-      avatarUrl?: string;
-      coverUrl?: string;
+      avatarMediaId?: string | null;
+      coverMediaId?: string | null;
       address?: string;
       city?: string;
       workplace?: string;

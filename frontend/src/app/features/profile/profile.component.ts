@@ -10,8 +10,8 @@ interface Profile {
   displayName: string;
   email: string;
   bio: string;
-  avatarUrl: string;
-  coverUrl: string;
+  avatarMediaId: string | null;
+  coverMediaId: string | null;
   address: string;
   city: string;
   workplace: string;
@@ -34,8 +34,8 @@ export class ProfileComponent implements OnInit {
       id: string;
       content: string;
       createdAt: string;
-      media: { type: string; url?: string }[];
-      author: { id: string; displayName: string; avatarUrl?: string };
+      media: { type: string; mediaId?: string | null }[];
+      author: { id: string; displayName: string; avatarMediaId?: string | null };
     }[]
   >([]);
   isOwnProfile = signal(true);
@@ -80,7 +80,7 @@ export class ProfileComponent implements OnInit {
         this.website = data.user.website || '';
       },
     });
-    this.api.get<{ id: string; content: string; createdAt: string; media: { type: string; url?: string }[]; author: { id: string; displayName: string; avatarUrl?: string } }[]>(
+    this.api.get<{ id: string; content: string; createdAt: string; media: { type: string; mediaId?: string | null }[]; author: { id: string; displayName: string; avatarMediaId?: string | null } }[]>(
       `/posts/user/${id}`,
     ).subscribe({
       next: (data) => this.posts.set(data),
@@ -114,10 +114,11 @@ export class ProfileComponent implements OnInit {
     if (!file) return;
     this.api.upload(file).subscribe({
       next: (res) => {
-        this.api.put<Profile>('/users/me', { avatarUrl: res.url }).subscribe({
+        this.api.put<Profile>('/users/me', { avatarMediaId: res.mediaId }).subscribe({
           next: (p) => this.profile.set(p),
         });
       },
+      error: (err) => alert(this.api.uploadErrorMessage(err)),
     });
   }
 
@@ -126,10 +127,11 @@ export class ProfileComponent implements OnInit {
     if (!file) return;
     this.api.upload(file).subscribe({
       next: (res) => {
-        this.api.put<Profile>('/users/me', { coverUrl: res.url }).subscribe({
+        this.api.put<Profile>('/users/me', { coverMediaId: res.mediaId }).subscribe({
           next: (p) => this.profile.set(p),
         });
       },
+      error: (err) => alert(this.api.uploadErrorMessage(err)),
     });
   }
 }

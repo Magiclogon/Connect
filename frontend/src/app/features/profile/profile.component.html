@@ -1,6 +1,6 @@
 @if (profile(); as p) {
   <div class="profile-page">
-    <div class="profile-cover" [style.backgroundImage]="p.coverUrl ? 'url(' + api.mediaUrl(p.coverUrl) + ')' : ''">
+    <div class="profile-cover" [style.backgroundImage]="p.coverMediaId ? 'url(' + api.mediaUrl(p.coverMediaId) + ')' : ''">
       @if (isOwnProfile()) {
         <label class="avatar-upload btn btn-secondary btn-sm cover-upload">
           Changer la bannière
@@ -10,7 +10,7 @@
     </div>
     <div class="profile-card card">
       <div class="profile-avatar-wrap">
-        <app-avatar [name]="p.displayName" [url]="p.avatarUrl" size="lg" />
+        <app-avatar [name]="p.displayName" [mediaId]="p.avatarMediaId || ''" size="lg" />
         @if (isOwnProfile()) {
           <label class="avatar-upload btn btn-secondary btn-sm">
             Changer la photo
@@ -79,8 +79,8 @@
           <div class="profile-post">
             <p>{{ post.content }}</p>
             @for (m of post.media; track $index) {
-              @if (m.url) {
-                <img [src]="api.mediaUrl(m.url)" class="post-media" alt="" />
+              @if (m.mediaId) {
+                <img [src]="api.mediaUrl(m.mediaId)" class="post-media" alt="" />
               }
             }
           </div>

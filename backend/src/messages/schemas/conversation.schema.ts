@@ -14,8 +14,8 @@ export class Message {
   @Prop({ default: '' })
   content: string;
 
-  @Prop({ default: '' })
-  mediaUrl: string;
+  @Prop({ type: String, default: null })
+  mediaId: string | null;
 
   @Prop({ default: Date.now })
   createdAt: Date;

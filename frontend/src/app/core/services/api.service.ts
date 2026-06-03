@@ -25,15 +25,28 @@ export class ApiService {
   upload(file: File) {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<{ url: string; filename: string }>(`${environment.apiUrl}/upload`, form);
+    return this.http.post<{ mediaId: string; contentType: string; size: number }>(
+      `${environment.apiUrl}/upload`,
+      form,
+    );
   }
 
-  mediaUrl(path: string): string {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    if (path.startsWith('/uploads')) {
-      return environment.production ? path : `${environment.apiUrl}${path}`;
+  /** User-facing message from upload HTTP errors (413, 400, 500). */
+  uploadErrorMessage(err: unknown): string {
+    const body = (err as { error?: { message?: string | string[] } })?.error;
+    const msg = body?.message;
+    if (Array.isArray(msg)) return msg[0] || 'Échec du téléversement';
+    if (typeof msg === 'string') return msg;
+    return 'Échec du téléversement. Vérifiez la taille (max 1 Go) et le format (MP4, WebM, MOV).';
+  }
+
+  /** Builds the URL to stream binary media stored in MongoDB (GET /media/:id). */
+  mediaUrl(mediaId: string | null | undefined): string {
+    if (!mediaId) return '';
+    if (mediaId.startsWith('http')) return mediaId;
+    if (mediaId.startsWith('/media/')) {
+      return `${environment.apiUrl}${mediaId}`;
     }
-    return path;
+    return `${environment.apiUrl}/media/${mediaId}`;
   }
 }

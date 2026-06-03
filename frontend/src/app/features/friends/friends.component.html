@@ -22,7 +22,7 @@
     <div class="user-grid">
       @for (user of friends(); track user.id) {
         <div class="user-card card">
-          <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" size="lg" />
+          <app-avatar [name]="user.displayName" [mediaId]="user.avatarMediaId || ''" size="lg" />
           <h3>{{ user.displayName }}</h3>
           <p>{{ user.bio || 'Pas de bio' }}</p>
           <button class="btn btn-secondary btn-sm" (click)="message(user.id)">Message</button>
@@ -36,7 +36,7 @@
   @if (activeTab() === 'requests') {
     @for (user of pending(); track user.id) {
       <div class="request-card card">
-        <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" />
+        <app-avatar [name]="user.displayName" [mediaId]="user.avatarMediaId || ''" />
         <div class="request-info">
           <strong>{{ user.displayName }}</strong>
           <span>{{ user.email }}</span>
@@ -62,7 +62,7 @@
     </div>
     @for (user of suggestions(); track user.id) {
       <div class="request-card card">
-        <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" />
+        <app-avatar [name]="user.displayName" [mediaId]="user.avatarMediaId || ''" />
         <div class="request-info">
           <a class="suggestion-profile-link" [routerLink]="['/profile', user.id]">{{ user.displayName }}</a>
           <span class="suggestion-reason">
@@ -105,7 +105,7 @@
     </div>
     @for (user of searchResults(); track user.id) {
       <div class="request-card card">
-        <app-avatar [name]="user.displayName" [url]="user.avatarUrl || ''" />
+        <app-avatar [name]="user.displayName" [mediaId]="user.avatarMediaId || ''" />
         <div class="request-info">
           <strong>{{ user.displayName }}</strong>
           <span>{{ user.email }}</span>

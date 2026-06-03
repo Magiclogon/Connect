@@ -9,14 +9,14 @@ import { AvatarComponent } from '../../shared/avatar.component';
 interface User {
   id: string;
   displayName: string;
-  avatarUrl?: string;
+  avatarMediaId?: string | null;
 }
 
 interface Message {
   senderId: string;
   type: string;
   content: string;
-  mediaUrl?: string;
+  mediaId?: string | null;
   createdAt: string;
   sender: User;
 }
@@ -111,8 +111,8 @@ export class MessagesComponent implements OnInit, OnDestroy {
     const conv = this.activeConv();
     if (!conv) return;
 
-    const sendMsg = async (type: string, content?: string, mediaUrl?: string) => {
-      const payload = { conversationId: conv.id, type, content, mediaUrl };
+    const sendMsg = async (type: string, content?: string, mediaId?: string) => {
+      const payload = { conversationId: conv.id, type, content, mediaId };
       const sent = (await this.chat.sendMessage(payload)) as Message;
       this.appendMessageToActive(sent);
       this.messageText = '';
@@ -125,8 +125,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
       this.api.upload(this.selectedFile).subscribe({
         next: (res) => {
           const type = this.selectedFile!.type.startsWith('video') ? 'video' : 'image';
-          void sendMsg(type, this.messageText, res.url);
+          void sendMsg(type, this.messageText, res.mediaId);
         },
+        error: (err) => alert(this.api.uploadErrorMessage(err)),
       });
     } else if (this.messageText.trim()) {
       void sendMsg('text', this.messageText);

@@ -36,7 +36,7 @@ export class PostsController {
   @Post()
   create(
     @CurrentUser() user: { userId: string },
-    @Body() body: { content?: string; media?: { type: string; url?: string; text?: string }[]; groupId?: string },
+    @Body() body: { content?: string; media?: { type: string; mediaId?: string; text?: string }[]; groupId?: string },
   ) {
     return this.postsService.create(user.userId, body);
   }
@@ -59,7 +59,7 @@ export class PostsController {
   comment(
     @CurrentUser() user: { userId: string },
     @Param('id') id: string,
-    @Body() body: { content: string; mediaUrl?: string; mediaType?: string },
+    @Body() body: { content: string; mediaId?: string; mediaType?: string },
   ) {
     return this.postsService.addComment(id, user.userId, body);
   }
@@ -79,7 +79,7 @@ export class PostsController {
     @CurrentUser() user: { userId: string },
     @Param('id') id: string,
     @Param('commentId') commentId: string,
-    @Body() body: { content: string; mediaUrl?: string; mediaType?: string },
+    @Body() body: { content: string; mediaId?: string; mediaType?: string },
   ) {
     return this.postsService.addCommentReply(id, commentId, user.userId, body);
   }

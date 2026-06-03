@@ -14,14 +14,14 @@ interface Group {
 interface User {
   id: string;
   displayName: string;
-  avatarUrl?: string;
+  avatarMediaId?: string | null;
   role?: string;
 }
 
 interface Post {
   id: string;
   content: string;
-  media: { type: string; url?: string }[];
+  media: { type: string; mediaId?: string | null }[];
   author: User;
   createdAt: string;
 }

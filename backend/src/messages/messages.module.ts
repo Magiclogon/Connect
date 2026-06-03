@@ -6,6 +6,7 @@ import { MessagesController } from './messages.controller';
 import { UsersModule } from '../users/users.module';
 import { FriendsModule } from '../friends/friends.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     UsersModule,
     FriendsModule,
     NotificationsModule,
+    MediaModule,
   ],
   controllers: [MessagesController],
   providers: [MessagesService],

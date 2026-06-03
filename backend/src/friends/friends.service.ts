@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Neo4jService } from '../neo4j/neo4j.service';
+import { RedisKeys, RedisTTL } from '../redis/redis-keys';
 import { RedisService } from '../redis/redis.service';
 import { UsersService } from '../users/users.service';
 
@@ -26,8 +27,10 @@ export class FriendsService {
        ON CREATE SET r.createdAt = datetime(), r.status = 'pending'`,
       { fromId, toId },
     );
-    await this.redis.invalidatePattern(`feed:${fromId}*`);
-    await this.redis.invalidatePattern(`feed:${toId}*`);
+    await this.redis.invalidatePattern(RedisKeys.feedPattern(fromId));
+    await this.redis.invalidatePattern(RedisKeys.feedPattern(toId));
+    await this.redis.del(RedisKeys.friendIds(fromId));
+    await this.redis.del(RedisKeys.friendIds(toId));
     return { message: 'Demande envoyée' };
   }
 
@@ -38,8 +41,11 @@ export class FriendsService {
        MERGE (a)-[:FRIENDS {since: datetime()}]-(b)`,
       { fromId, userId },
     );
-    await this.redis.invalidatePattern(`feed:${userId}*`);
-    await this.redis.invalidatePattern(`feed:${fromId}*`);
+    await this.redis.invalidatePattern(RedisKeys.feedPattern(userId));
+    await this.redis.invalidatePattern(RedisKeys.feedPattern(fromId));
+    await this.redis.del(RedisKeys.friendIds(userId));
+    await this.redis.del(RedisKeys.friendIds(fromId));
+    await this.redis.invalidatePattern('cache:stories:*');
     return { message: 'Demande acceptée' };
   }
 
@@ -109,11 +115,17 @@ export class FriendsService {
   }
 
   async getFriendIds(userId: string): Promise<string[]> {
+    const cacheKey = RedisKeys.friendIds(userId);
+    const cached = await this.redis.getJson<string[]>(cacheKey);
+    if (cached) return cached;
+
     const records = await this.neo4j.run<{ friendId: string }>(
       `MATCH (u:User {id: $userId})-[:FRIENDS]-(f:User) RETURN f.id AS friendId`,
       { userId },
     );
-    return records.map((r) => r.friendId);
+    const ids = records.map((r) => r.friendId);
+    await this.redis.setJson(cacheKey, ids, RedisTTL.friendIds);
+    return ids;
   }
 
   async areFriends(userId: string, otherId: string): Promise<boolean> {

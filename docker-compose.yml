@@ -13,6 +13,22 @@ services:
       timeout: 5s
       retries: 5
 
+  mongo-express:
+    image: mongo-express:latest
+    container_name: social-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      # Optional: Add basic auth credentials for the web UI (Default is admin/pass)
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=pass
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
   neo4j:
     image: neo4j:5-community
     container_name: social-neo4j
@@ -65,10 +81,8 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: social-media-nosql-jwt-secret-change-in-prod
       JWT_EXPIRES_IN: 7d
-      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_SIZE_MB: "1024"
       CORS_ORIGIN: http://localhost:4200
-    volumes:
-      - uploads_data:/app/uploads
     depends_on:
       mongodb:
         condition: service_healthy
@@ -92,4 +106,3 @@ volumes:
   mongodb_data:
   neo4j_data:
   redis_data:
-  uploads_data:
