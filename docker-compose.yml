@@ -22,8 +22,8 @@ services:
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongodb
       - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=pass
+      - ME_CONFIG_BASICAUTH_USERNAME=dilaw
+      - ME_CONFIG_BASICAUTH_PASSWORD=IYUIAZEgsddjkfhisd75sq@!
     depends_on:
       mongodb:
         condition: service_healthy
@@ -36,7 +36,7 @@ services:
       - "7474:7474" # <-- This is your Neo4j Browser UI port!
       - "7687:7687"
     environment:
-      NEO4J_AUTH: neo4j/password123
+      NEO4J_AUTH: dilaw/IYUIAZEgsddjkfhisd75sq@!
       NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
