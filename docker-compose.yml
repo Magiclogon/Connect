@@ -22,7 +22,6 @@ services:
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongodb
       - ME_CONFIG_MONGODB_PORT=27017
-      # Optional: Add basic auth credentials for the web UI (Default is admin/pass)
       - ME_CONFIG_BASICAUTH_USERNAME=admin
       - ME_CONFIG_BASICAUTH_PASSWORD=pass
     depends_on:
@@ -34,7 +33,7 @@ services:
     container_name: social-neo4j
     restart: unless-stopped
     ports:
-      - "7474:7474"
+      - "7474:7474" # <-- This is your Neo4j Browser UI port!
       - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/password123
@@ -61,6 +60,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # 🚀 ADDED: Redis Official Graphical Interface
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: social-redis-insight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis_insight_data:/db
+    depends_on:
+      redis:
+        condition: service_healthy
 
   backend:
     build:
@@ -106,3 +118,4 @@ volumes:
   mongodb_data:
   neo4j_data:
   redis_data:
+  redis_insight_data:
