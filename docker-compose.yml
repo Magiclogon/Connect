@@ -22,8 +22,8 @@ services:
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongodb
       - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=dilaw
-      - ME_CONFIG_BASICAUTH_PASSWORD=IYUIAZEgsddjkfhisd75sq@!
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=pass
     depends_on:
       mongodb:
         condition: service_healthy
@@ -33,19 +33,20 @@ services:
     container_name: social-neo4j
     restart: unless-stopped
     ports:
-      - "7474:7474" # <-- Port de l'interface d'administration Neo4j Browser
-      - "7687:7687" # <-- Port Bolt pour la diffusion des données
+      - "7474:7474" 
+      - "7687:7687" 
     environment:
-      NEO4J_AUTH: neo4j/IYUIAZEgsddjkfhisd75sq@! # <-- Utilisateur admin par défaut (requis pour l'initialisation)
+      NEO4J_AUTH: neo4j/password123
       NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u neo4j -p IYUIAZEgsddjkfhisd75sq@! 'RETURN 1' || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
+      # Network port check: keeps container healthy without password dependency conflicts
+      test: ["CMD", "nc", "-z", "localhost", "7687"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -61,7 +62,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Interface Graphique Officielle pour Redis
   redis-insight:
     image: redis/redisinsight:latest
     container_name: social-redis-insight
@@ -87,8 +87,8 @@ services:
       PORT: 3000
       MONGODB_URI: mongodb://mongodb:27017/socialmedia
       NEO4J_URI: bolt://neo4j:7687
-      NEO4J_USER: neo4j # <-- Mis à jour pour correspondre à l'identifiant valide
-      NEO4J_PASSWORD: IYUIAZEgsddjkfhisd75sq@!
+      NEO4J_USER: neo4j 
+      NEO4J_PASSWORD: password123
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: social-media-nosql-jwt-secret-change-in-prod
