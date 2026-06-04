@@ -33,20 +33,19 @@ services:
     container_name: social-neo4j
     restart: unless-stopped
     ports:
-      - "7474:7474" 
-      - "7687:7687" 
+      - "7474:7474" # <-- This is your Neo4j Browser UI port!
+      - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/password123
       NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
     healthcheck:
-      # Network port check: keeps container healthy without password dependency conflicts
-      test: ["CMD", "nc", "-z", "localhost", "7687"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p password123 'RETURN 1' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   redis:
     image: redis:7-alpine
@@ -62,6 +61,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # 🚀 ADDED: Redis Official Graphical Interface
   redis-insight:
     image: redis/redisinsight:latest
     container_name: social-redis-insight
@@ -87,7 +87,7 @@ services:
       PORT: 3000
       MONGODB_URI: mongodb://mongodb:27017/socialmedia
       NEO4J_URI: bolt://neo4j:7687
-      NEO4J_USER: neo4j 
+      NEO4J_USER: neo4j
       NEO4J_PASSWORD: password123
       REDIS_HOST: redis
       REDIS_PORT: 6379
